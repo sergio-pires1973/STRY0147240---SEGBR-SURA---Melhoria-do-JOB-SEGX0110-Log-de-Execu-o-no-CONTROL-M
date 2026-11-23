@@ -1,0 +1,17 @@
+------ Rebuild All started: Project: SEGP1619, Configuration: Debug Any CPU ------
+C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727\Vbc.exe /noconfig /imports:Microsoft.VisualBasic,System,System.Collections,System.Collections.Generic,System.Data,System.Drawing,System.Diagnostics,System.Windows.Forms /nowarn:42016,41999,42017,42018,42019,42032,42036,42020,42021,42022 /rootnamespace:SEGP1619 /doc:obj\Debug\SEGP1619.xml /define:"CONFIG=\"Debug\",DEBUG=-1,TRACE=-1,_MyType=\"WindowsForms\",PLATFORM=\"AnyCPU\"" /reference:bin\SABL0101.DLL,bin\SGSL0003.dll,C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727\System.Data.dll,C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727\System.Deployment.dll,C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727\System.dll,C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727\System.Drawing.dll,C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727\System.Windows.Forms.dll,C:\WINDOWS\Microsoft.NET\Framework\v2.0.50727\System.Xml.dll /main:SEGP1619.My.MyApplication /debug+ /debug:full /out:obj\Debug\SEGP1619.exe /resource:obj\Debug\SEGP1619.frmPrincipal.resources /resource:obj\Debug\SEGP1619.Resources.resources /target:winexe clsPrincipal.vb frmPrincipal.vb frmPrincipal.Designer.vb "My Project\AssemblyInfo.vb" "My Project\Application.Designer.vb" "My Project\Resources.Designer.vb" "My Project\Settings.Designer.vb"
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(34) : warning BC42105: Function 'DadosRelatorioRP001' doesn't return a value on all code paths. A null reference exception could occur at run time when the result is used.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(55) : warning BC42105: Function 'DadosRelatorioRP002' doesn't return a value on all code paths. A null reference exception could occur at run time when the result is used.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(76) : warning BC42105: Function 'DadosRelatorioRP003' doesn't return a value on all code paths. A null reference exception could occur at run time when the result is used.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(175) : warning BC42024: Unused local variable: 'cnpjParceiro'.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(176) : warning BC42024: Unused local variable: 'cnpjParceiroAnt'.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(178) : warning BC42024: Unused local variable: 'nomeParceiro'.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(179) : warning BC42024: Unused local variable: 'vezLooping'.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(286) : warning BC42024: Unused local variable: 'cnpjParceiro'.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(287) : warning BC42024: Unused local variable: 'cnpjParceiroAnt'.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(289) : warning BC42024: Unused local variable: 'nomeParceiro'.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(415) : warning BC42024: Unused local variable: 'cnpjParceiro'.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(416) : warning BC42024: Unused local variable: 'cnpjParceiroAnt'.
+C:\SEGBR\SEGP1579_v6\frmPrincipal.vb(418) : warning BC42024: Unused local variable: 'nomeParceiro'.
+SEGP1619 -> C:\SEGBR\SEGP1579_v6\bin\Debug\SEGP1619.exe
+========== Rebuild All: 1 succeeded, 0 failed, 0 skipped ==========

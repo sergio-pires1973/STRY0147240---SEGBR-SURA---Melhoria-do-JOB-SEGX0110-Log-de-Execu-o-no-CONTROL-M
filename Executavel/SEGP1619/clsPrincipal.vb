@@ -1,0 +1,121 @@
+Imports System.Threading
+Imports Alianca.Seguranca.BancoDados
+Imports Alianca.Sistema.Funcoes.TrataParametros
+Imports System.Configuration
+Imports System.Drawing
+Imports System.IO
+Imports System.Text
+
+Public Class clsPrincipal
+    Public iConexao As Integer
+    Public Usuario_CPF As String
+    Public CTMArquivoLog As String  'Nome do arquivo de log do CTM
+    Public AmbienteId As Integer    'Ambiente
+    Public nomeUsuario As String    'Usuario   
+    Public codigoTarefa As String    'Tarefa   
+    Public ignoraFaturamento As String  'Ignora Faturamento
+
+
+    Public Sub TituloAmbiente(ByVal fForm As Form, ByVal iAmbiente As Integer)
+        Try
+
+            Dim sAmbiente As String = ""
+            If iAmbiente = 3 Then
+                sAmbiente = "Qualidade AB"
+            End If
+            If iAmbiente = 7 Then
+                sAmbiente = "Qualidade ABS"
+            End If
+            If iAmbiente = 2 Then
+                sAmbiente = "Produção AB"
+            End If
+            If iAmbiente = 6 Then
+                sAmbiente = "Produção ABS"
+            End If
+            If iAmbiente = 4 Then
+                sAmbiente = "Desenv/PreProd AB"
+            End If
+            If iAmbiente = 8 Then
+                sAmbiente = "Desenv/PreProd ABS"
+            End If
+
+            If sAmbiente <> "" Then
+                fForm.Text = fForm.Text & " | Ambiente " & sAmbiente
+            End If
+
+        Catch ex As Exception
+            GravaLogCTM(ex.Message.ToString, System.Reflection.MethodBase.GetCurrentMethod.Name().ToString, ex.StackTrace)
+        End Try
+    End Sub
+    Public Sub Conexao(ByVal form As Form)
+        Try
+            If Not Trata_Parametros(Microsoft.VisualBasic.Command, System.Reflection.Assembly.GetExecutingAssembly) Then
+                'Descomentar para subir para produção 
+                End
+                'Descomentar para subir para produção 
+
+                'Comentar para subir para produção
+                'iConexao = cCon.ConfiguraConexao(System.Reflection.Assembly.GetExecutingAssembly, 3)
+                'TituloAmbiente(form, 3)
+                'Comentar para subir para produção
+            Else
+                'Se a chamada vier via Portal, assume o ambiente do Command
+                iConexao = cCon.ConfiguraConexao(System.Reflection.Assembly.GetExecutingAssembly, Alianca.Sistema.Funcoes.TrataParametros.glAmbiente_id)
+                TituloAmbiente(form, Alianca.Sistema.Funcoes.TrataParametros.glAmbiente_id)
+            End If
+
+            Usuario_CPF = Alianca.Sistema.Funcoes.TrataParametros.gsCPF
+
+            If Usuario_CPF Is Nothing Then
+                Usuario_CPF = "SEGP1619"
+            End If
+
+            cCon.ConnectionTimeout = cCon.TimeTimeout.Infinito
+
+        Catch ex As Exception
+            GravaLogCTM(ex.Message.ToString, System.Reflection.MethodBase.GetCurrentMethod.Name().ToString, ex.StackTrace)
+        End Try
+    End Sub
+
+    Public Sub GravaLogCTM(ByVal sErro As String, ByVal sRotina As String, ByVal sTrace As String)
+        Dim arquivoLog
+
+        arquivoLog = New StreamWriter(CTMArquivoLog, True, Encoding.UTF8)
+        If sErro.Length > 0 And sRotina.Length > 0 Then
+            arquivoLog.WriteLine(sErro & " - " & sRotina & " - " & sTrace)
+        Else
+            arquivoLog.WriteLine(sTrace)
+        End If
+
+        arquivoLog.Flush()
+        arquivoLog.Close()
+        arquivoLog.Dispose()
+
+        frmPrincipal.Dispose()
+
+        Application.Exit()
+    End Sub
+
+    Public Function VerificaControlM(ByVal parametros) As Boolean
+        Dim arrParm() As String
+
+        VerificaControlM = False
+
+        If parametros <> "" Then
+            arrParm = Split(parametros, " ")
+
+            If UBound(arrParm) >= 3 Then
+                If arrParm(1) = "CTM" Then
+                    VerificaControlM = True
+
+                    CTMArquivoLog = arrParm(0)
+                    AmbienteId = Int(arrParm(2))
+                    nomeUsuario = arrParm(3)
+                    codigoTarefa = arrParm(4)
+                    ignoraFaturamento = arrParm(5)
+                End If
+            End If
+
+        End If
+    End Function
+End Class

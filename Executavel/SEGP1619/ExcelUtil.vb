@@ -1,0 +1,310 @@
+Imports System
+Imports System.Data
+Imports System.IO
+Imports Microsoft.Office.Core
+Imports Microsoft.Office.Interop.Excel
+
+Namespace SEGP1619.Utils
+    Class ExcelUtil
+        Private _excel As Application = New Application()
+        Private _excelworkBook As Workbook
+        Private _excelSheetHeader As Worksheet
+        Private _excelSheetDetalhe As Worksheet
+        Private _excelSheetTrailer As Worksheet
+        Private XlSaveAsAccessMode_xlShared As XlSaveAsAccessMode
+        Private Const XlWBATemplate_xlWBATWorksheet As Integer = -4167
+        Private Const XlFileFormat_xlWorkbookNormal As Integer = -4143
+
+        Public Sub ExportarExcelFaturamento(ByVal caminho As String, ByVal dsDetalhe As DataSet, ByVal NomeArquivoSS As String, ByVal dsGrupoPorApolice As DataSet)
+            _excel = New Application()
+            XlSaveAsAccessMode_xlShared = XlSaveAsAccessMode.xlShared
+            Dim DTDetalhe As System.Data.DataTable
+            Dim dtInicio As String
+
+            DTDetalhe = dsDetalhe.Tables(0)
+
+            Dim caminhoSubExt As String
+            Dim DTSubExt As System.Data.DataTable
+            Dim qtdRegistrosSubExt As String
+            Dim criterio As String
+            Dim apoliceId As String
+            Dim ramoId As String
+            Dim estipulanteNome As String
+
+            Try
+                For Each registro As DataRow In dsGrupoPorApolice.Tables(0).Rows
+                    apoliceId = registro("apolice_id").ToString
+                    ramoId = registro("ramo_id").ToString
+                    estipulanteNome = registro("nome").ToString
+                    dtInicio = registro("inicio_cobertura").ToString
+                    criterio = "apolice_id = '" & apoliceId & "' AND ramo_id = '" & ramoId & "'"
+
+                    DTSubExt = FiltrarTabela(DTDetalhe, criterio)
+
+                    If DTSubExt.Rows.Count > 0 Then
+                        caminhoSubExt = caminho & "INCL SURA " & NomeArquivoSS & " APO_" & apoliceId & "_Ramo_" & ramoId & ".xls"
+
+                        qtdRegistrosSubExt = DTSubExt.Rows.Count
+                        GerarExcel(caminhoSubExt, DTSubExt.Rows.Item(0)("subgrupo").ToString, dtInicio, DTSubExt, qtdRegistrosSubExt, apoliceId, ramoId, estipulanteNome)
+
+                    End If
+                Next
+
+                dsGrupoPorApolice.Dispose()
+
+            Catch ex As Exception
+                Throw New Exception(ex.Message)
+            End Try
+
+        End Sub
+
+        Private Sub GerarExcel(ByVal caminhoSubExt As String, ByVal strSub As String, _
+                               ByVal dtInicio As String, ByVal dtDetalhe As System.Data.DataTable, _
+                               ByVal qtdRegistros As String, ByVal apolice_id As String, _
+                               ByVal ramo_id As String, _
+                               ByVal estipulanteNome As String)
+            Try
+                _excel.Visible = False
+                _excel.DisplayAlerts = False
+                _excelworkBook = _excel.Workbooks.Add(Type.Missing)
+
+                Cabecalho(strSub, dtInicio, apolice_id, ramo_id, estipulanteNome)
+                Detalhe(dtDetalhe)
+                Trailer(qtdRegistros, ramo_id)
+
+                _excelworkBook.SaveAs(caminhoSubExt, XlFileFormat_xlWorkbookNormal, Type.Missing, Type.Missing, Type.Missing, Type.Missing, XlSaveAsAccessMode_xlShared, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing)
+                _excel.Application.Quit()
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(_excel)
+            Catch ex As Exception
+                Throw New Exception(ex.Message)
+            End Try
+        End Sub
+
+        Private Function FiltrarTabela(ByVal originalTable As System.Data.DataTable, ByVal criterio As String) As System.Data.DataTable
+            ' Crie um novo DataTable com as mesmas colunas do original
+            Dim novoDataTable As System.Data.DataTable = originalTable.Clone()
+
+            ' Use o método Select para filtrar as linhas do DataTable original com base no critério
+            Dim rows() As DataRow = originalTable.Select(criterio)
+
+            ' Adicione as linhas filtradas ao novo DataTable
+            For Each row As DataRow In rows
+                novoDataTable.ImportRow(row)
+            Next
+
+            ' Retorne o novo DataTable clonado com as linhas filtradas
+            Return novoDataTable
+        End Function
+
+        Private Sub Cabecalho(ByVal strSub As String, ByVal dtInicio As String, ByVal apolice_id As String, ByVal ramo_id As String, ByVal estipulanteNome As String)
+            _excelSheetHeader = CType(_excelworkBook.ActiveSheet, Microsoft.Office.Interop.Excel.Worksheet)
+            _excelSheetHeader.Name = "Header"
+            _excelSheetHeader.Cells(1, 1) = "Tipo de registro"
+            _excelSheetHeader.Cells(1, 2) = "Identificador do arquivo"
+            _excelSheetHeader.Cells(1, 3) = "Ramo"
+            _excelSheetHeader.Cells(1, 4) = "Apólice"
+            _excelSheetHeader.Cells(1, 5) = "Subgrupo"
+            _excelSheetHeader.Cells(1, 6) = "Mês/Ano da remessa"
+            _excelSheetHeader.Cells(1, 7) = "Nome do Estipulante"
+            _excelSheetHeader.Cells(1, 8) = "Filler"
+
+            _excelSheetHeader.Range("A1:H1").Font.Bold = True
+            '_excelSheet.Range("A1").Font.Bold = True
+            '_excelSheet.Range("A1").ColumnWidth = 10
+
+
+            'celulas.Font.Bold = False
+
+            _excelSheetHeader.Cells(2, 1) = "0"
+            _excelSheetHeader.Cells(2, 2) = "SEGA4000"
+            _excelSheetHeader.Cells(2, 3) = ramo_id
+            _excelSheetHeader.Cells(2, 4) = apolice_id
+            _excelSheetHeader.Cells(2, 5) = strSub
+            _excelSheetHeader.Cells(2, 6) = dtInicio.Substring(3)
+            _excelSheetHeader.Cells(2, 7) = estipulanteNome
+            _excelSheetHeader.Cells(2, 8) = ""
+            _excelSheetHeader.Range("F2").NumberFormat = "mm/aaaa"
+
+            _excelSheetHeader.Columns.AutoFit()
+        End Sub
+
+        Private Sub Detalhe(ByVal dtDetalhe As System.Data.DataTable)
+
+            _excelSheetDetalhe = CType(_excelworkBook.Sheets(2), Worksheet)
+
+
+            '_excelworkBook = _excel.Workbooks.Add(Type.Missing)
+            '_excelSheetDetalhe = CType(_excelworkBook.new, Microsoft.Office.Interop.Excel.Worksheet)
+            _excelSheetDetalhe.Name = "Detalhe"
+
+            _excelSheetDetalhe.Cells(1, 1) = "Sequencial"
+            _excelSheetDetalhe.Cells(1, 2) = "Tipo de registro"
+            _excelSheetDetalhe.Cells(1, 3) = "Início de cobertura vida"
+            _excelSheetDetalhe.Cells(1, 4) = "Entrada no subgrupo"
+            _excelSheetDetalhe.Cells(1, 5) = "Nome do principal"
+            _excelSheetDetalhe.Cells(1, 6) = "CPF do principal"
+            _excelSheetDetalhe.Cells(1, 7) = "Data de nascimento do principal"
+            _excelSheetDetalhe.Cells(1, 8) = "Sexo do principal"
+            _excelSheetDetalhe.Cells(1, 9) = "Estado civil do principal"
+            _excelSheetDetalhe.Cells(1, 10) = "Capital segurado"
+            _excelSheetDetalhe.Cells(1, 11) = "Salario"
+            _excelSheetDetalhe.Cells(1, 12) = "Endereço do principal"
+            _excelSheetDetalhe.Cells(1, 13) = "Bairro do principal"
+            _excelSheetDetalhe.Cells(1, 14) = "Município do principal"
+            _excelSheetDetalhe.Cells(1, 15) = "CEP do principal"
+            _excelSheetDetalhe.Cells(1, 16) = "UF do principal"
+            _excelSheetDetalhe.Cells(1, 17) = "Email"
+            _excelSheetDetalhe.Cells(1, 18) = "DDD Telefone"
+            _excelSheetDetalhe.Cells(1, 19) = "Telefone"
+            _excelSheetDetalhe.Cells(1, 20) = "Nome do cônjuge"
+            _excelSheetDetalhe.Cells(1, 21) = "CPF do cônjuge"
+            _excelSheetDetalhe.Cells(1, 22) = "Data de nascimento do cônjuge"
+            _excelSheetDetalhe.Cells(1, 23) = "Sexo do cônjuge"
+            _excelSheetDetalhe.Cells(1, 24) = "Início de cobertura do cônjuge"
+            _excelSheetDetalhe.Cells(1, 25) = "Beneficiário 1"
+            _excelSheetDetalhe.Cells(1, 26) = "Beneficiario 2"
+            _excelSheetDetalhe.Cells(1, 27) = "Beneficiario 3"
+            _excelSheetDetalhe.Cells(1, 28) = "Beneficiario 4"
+            _excelSheetDetalhe.Cells(1, 29) = "Beneficiario 5"
+            _excelSheetDetalhe.Cells(1, 30) = "Beneficiario 6"
+            _excelSheetDetalhe.Cells(1, 31) = "Beneficiario 7"
+            _excelSheetDetalhe.Cells(1, 32) = "Campo 1"
+            _excelSheetDetalhe.Cells(1, 33) = "Campo 2"
+            _excelSheetDetalhe.Cells(1, 34) = "Campo 3"
+            _excelSheetDetalhe.Cells(1, 35) = "Campo 4"
+            _excelSheetDetalhe.Cells(1, 36) = "Campo 5"
+            _excelSheetDetalhe.Cells(1, 37) = "Sub Grupo"
+            _excelSheetDetalhe.Cells(1, 38) = "Valor Prêmio"
+
+
+            _excelSheetDetalhe.Range("A1:AL1").Font.Bold = True
+
+            _excelSheetDetalhe.Range("C1:C9000").NumberFormat = "dd/mm/aaaa"
+            _excelSheetDetalhe.Range("D1:D9000").NumberFormat = "dd/mm/aaaa"
+            _excelSheetDetalhe.Range("F1:F9000").NumberFormat = "@"
+            _excelSheetDetalhe.Range("G1:G9000").NumberFormat = "dd/mm/aaaa"
+
+            Dim linhaAtual As Integer = 1
+            For Each linha As DataRow In dtDetalhe.Rows
+                linhaAtual += 1
+                _excelSheetDetalhe.Cells(linhaAtual, 1) = linhaAtual - 1
+
+                Dim index As Integer = 2
+                While index <= 38
+                    _excelSheetDetalhe.Cells(linhaAtual, index) = linha(index - 1).ToString()
+                    index += 1
+                End While
+            Next
+
+            _excelSheetDetalhe.Columns.AutoFit()
+
+        End Sub
+
+        Private Sub Trailer(ByVal qtdRegistros As String, ByVal ramo_id As String)
+            _excelSheetTrailer = CType(_excelworkBook.Sheets(3), Microsoft.Office.Interop.Excel.Worksheet)
+            '_excelSheetTrailer = CType(_excelworkBook.Worksheets.Add(), Worksheet)
+            _excelSheetTrailer.Name = "Trailer"
+
+            _excelSheetTrailer.Cells(1, 1) = "Tipo de registro"
+            _excelSheetTrailer.Cells(1, 2) = "Filler"
+            _excelSheetTrailer.Cells(1, 3) = "Ramo"
+            _excelSheetTrailer.Cells(1, 4) = "Total de registros"
+            _excelSheetTrailer.Cells(1, 5) = "Filler"
+
+            _excelSheetTrailer.Range("A1:E1").Font.Bold = True
+
+            _excelSheetTrailer.Cells(2, 1) = "999999"
+            _excelSheetTrailer.Cells(2, 2) = " "
+            _excelSheetTrailer.Cells(2, 3) = ramo_id
+            _excelSheetTrailer.Cells(2, 4) = qtdRegistros
+            _excelSheetTrailer.Cells(2, 5) = " "
+
+            _excelSheetTrailer.Columns.AutoFit()
+
+        End Sub
+
+        Public Sub ExportarExcelErros(ByVal caminho As String, ByVal dsDetalhe As DataSet, ByVal NomeArquivoSS As String)
+            _excel = New Application()
+            XlSaveAsAccessMode_xlShared = XlSaveAsAccessMode.xlShared
+            Dim DTDetalhe As System.Data.DataTable
+            DTDetalhe = dsDetalhe.Tables(0)
+
+            Dim caminhoSubExt As String
+            Try
+                caminhoSubExt = caminho & NomeArquivoSS & ".xls"
+                GerarExcelErros(caminhoSubExt, DTDetalhe)
+            Catch ex As Exception
+                Throw New Exception(ex.Message)
+            End Try
+
+        End Sub
+
+        Private Sub GerarExcelErros(ByVal caminhoSubExt As String, ByVal dtDetalhe As System.Data.DataTable)
+            Try
+                _excel.Visible = False
+                _excel.DisplayAlerts = False
+                _excelworkBook = _excel.Workbooks.Add(Type.Missing)
+
+                DetalheErros(dtDetalhe)
+
+
+                _excelworkBook.SaveAs(caminhoSubExt, XlFileFormat_xlWorkbookNormal, Type.Missing, Type.Missing, Type.Missing, Type.Missing, XlSaveAsAccessMode_xlShared, Type.Missing, Type.Missing, Type.Missing, Type.Missing, Type.Missing)
+                _excel.Application.Quit()
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(_excel)
+            Catch ex As Exception
+                Throw New Exception(ex.Message)
+            End Try
+        End Sub
+
+        Private Sub DetalheErros(ByVal dtDetalhe As System.Data.DataTable)
+
+            _excelSheetDetalhe = CType(_excelworkBook.Sheets(1), Worksheet)
+
+            _excelSheetDetalhe.Name = "Erros importacao SURA"
+
+            _excelSheetDetalhe.Cells(1, 1) = "Data"
+            _excelSheetDetalhe.Cells(1, 2) = "Arquivo"
+            _excelSheetDetalhe.Cells(1, 3) = "Motivo Recusa"
+
+
+            _excelSheetDetalhe.Range("A1:J1").Font.Bold = True
+
+            _excelSheetDetalhe.Range("A2:A9000").NumberFormat = "dd/mm/aaaa"
+            _excelSheetDetalhe.Range("B2:B9000").NumberFormat = "@"
+            _excelSheetDetalhe.Range("E2:E9000").NumberFormat = "@"
+            Dim linhaAtual As Integer = 1
+            For Each linha As DataRow In dtDetalhe.Rows
+                linhaAtual += 1
+
+                Dim index As Integer = 1
+                While index <= 3
+                    _excelSheetDetalhe.Cells(linhaAtual, index) = linha(index - 1).ToString()
+                    index += 1
+                End While
+            Next
+
+            _excelSheetDetalhe.Columns.AutoFit()
+
+        End Sub
+
+        Public Sub AbrirExcel(ByVal caminho As String)
+            Try
+                System.Diagnostics.Process.Start("excel", """" & caminho & """")
+            Catch ex As Exception
+                Throw New Exception(ex.Message)
+            End Try
+        End Sub
+
+        Public Sub FormattingExcelCells(ByVal range As Microsoft.Office.Interop.Excel.Range, ByVal HTMLcolorCode As String, ByVal fontColor As System.Drawing.Color, ByVal IsFontbool As Boolean)
+            range.Interior.Color = System.Drawing.ColorTranslator.FromHtml(HTMLcolorCode)
+            range.Font.Color = System.Drawing.ColorTranslator.ToOle(fontColor)
+
+            If IsFontbool = True Then
+                range.Font.Bold = IsFontbool
+            End If
+        End Sub
+    End Class
+End Namespace
+
+
+
